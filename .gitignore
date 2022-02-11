@@ -3,5 +3,6 @@ vendor/
 password/
 secret
 *.local.*
+public/favicon.ico
 ~*
 *~

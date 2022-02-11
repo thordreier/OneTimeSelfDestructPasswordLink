@@ -1,31 +1,38 @@
 <?php
 
-#define('DEBUG', true);  # Should not be set in production
-define('CIPHER', 'aes-256-cbc');
-define('HASHALGO', 'sha256');
-define('TOKENLEN', 32);
-define('TOKENVALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
-define('SHRED', true);
-define('PASSWORD_DIR', '../password');
-define('SECRET_FILE', '../secret');
-define('TEXT_MAKELINK', 'Make one-time password link');
-define('TEXT_GETPASSWORD', 'Click to get password');
-define('TEXT_NONEXISTING', 'No password found. Maybe the password has already been fetched.');
-
 # Just stop on any error, also warnings
 function exception_error_handler($errno, $errstr, $errfile, $errline ) {
     throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 }
 set_error_handler('exception_error_handler');
+
+
+define('SETTINGS_LOCAL', '../settings.local.php');
+if (file_exists(SETTINGS_LOCAL)) {
+    require_once(SETTINGS_LOCAL);
+}
+
+
+#if(!defined('DEBUG')) {define('DEBUG', true)};  # Should not be set in production
+if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
+if(!defined('HASHALGO')) {define('HASHALGO', 'sha256');}
+if(!defined('TOKENLEN')) {define('TOKENLEN', 32);}
+if(!defined('TOKENVALIDCHARS')) {define('TOKENVALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
+if(!defined('SHRED')) {define('SHRED', true);}
+if(!defined('PASSWORD_DIR')) {define('PASSWORD_DIR', '../password');}
+if(!defined('SECRET_FILE')) {define('SECRET_FILE', '../secret');}
+if(!defined('TEXT_MAKELINK')) {define('TEXT_MAKELINK', 'Make one-time password link');}
+if(!defined('TEXT_GETPASSWORD')) {define('TEXT_GETPASSWORD', 'Click to get password');}
+if(!defined('TEXT_NONEXISTING')) {define('TEXT_NONEXISTING', 'No password found. Maybe the password has already been fetched.');}
+
+
 if (defined('DEBUG') && DEBUG) {error_reporting(E_ALL); ini_set('display_errors', '1');}
 
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
-
 require __DIR__ . '/../vendor/autoload.php';
-
 $app = AppFactory::create();
 
 

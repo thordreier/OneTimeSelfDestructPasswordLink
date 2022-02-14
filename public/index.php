@@ -13,7 +13,7 @@ if (file_exists(SETTINGS_LOCAL)) {
 }
 
 
-#if(!defined('DEBUG')) {define('DEBUG', true)};  # Should not be set in production
+#if(!defined('DEBUG')) {define('DEBUG', true);}  # Should not be set in production
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
 if(!defined('HASHALGO')) {define('HASHALGO', 'sha256');}
 if(!defined('TOKENLEN')) {define('TOKENLEN', 32);}
@@ -34,6 +34,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 require __DIR__ . '/../vendor/autoload.php';
 $app = AppFactory::create();
+if (defined('DEBUG') && DEBUG) {$app->addErrorMiddleware(true, true, true);}
 
 
 class PasswordStore {
@@ -109,15 +110,18 @@ function makeHtml ($code) {
 }
 
 function getBaseUri ($request) {
-    return preg_replace('/^(.+:\/\/[^\/]+)(.*)$/','$1', $request->getUri());
+    # For some reason uri doen't get blessed with slim/http/src/Uri.php
+    # Just implementing the same stuff in here
+    $scheme = $request->getUri()->getScheme();
+    $authority = $request->getUri()->getAuthority();
+    return ($scheme !== '' ? $scheme . ':' : '') . ($authority !== '' ? '//' . $authority : '');
 }
 
 function getTokenUri ($v, $request) {
-    $baseUri = getBaseUri ($request);
+    $baseUri = getBaseUri($request);
     $token = PasswordStore::storeString($v);
     return "$baseUri/t/$token";
 }
-
 
 $app->get('/', function (Request $request, Response $response, $args) {
     $v = PasswordStore::createPassword();
@@ -131,9 +135,14 @@ $app->post('/new', function (Request $request, Response $response, $args) {
     $data = $request->getParsedBody();
     $v = $data['v'];
     $tokenUri = getTokenUri($v, $request);
-    $html = "<input type='text' size=100 readonly value='$tokenUri'>";
-    $html = makeHtml($html);
-    $response->getBody()->write($html);
+    if (preg_match('/application\/json/', $request->getHeaderLine('Content-Type'))) {
+        $json = array('uri' => $tokenUri);
+        $response = $response->withJson(['uri' => $tokenUri]);
+    } else {
+        $html = "<input type='text' size=100 readonly value='$tokenUri'>";
+        $html = makeHtml($html);
+        $response->getBody()->write($html);
+    }
     return $response;
 });
 

@@ -14,6 +14,7 @@ if (file_exists(SETTINGS_LOCAL)) {
 
 
 #if(!defined('DEBUG')) {define('DEBUG', true);}  # Should not be set in production
+#if(!defined('KEEP_FILES')) {define('KEEP_FILES', true);}  # Should not be set in production
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
 if(!defined('HASHALGO')) {define('HASHALGO', 'sha256');}
 if(!defined('TOKENLEN')) {define('TOKENLEN', 32);}
@@ -98,8 +99,10 @@ class PasswordStore {
         $file = PASSWORD_DIR . '/' . $tokenHash;
         $encrypted = file_get_contents($file);
         $plain = self::decryptString($encrypted, $token);
-        if (SHRED) {exec("shred -n 7 $file");}
-        unlink($file);
+        if (! defined('KEEP_FILES') || ! DEBUG) {
+            if (SHRED) {exec("shred -n 7 $file");}
+            unlink($file);
+        }
         return $plain;
     }
 }

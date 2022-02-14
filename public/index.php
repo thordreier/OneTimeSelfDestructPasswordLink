@@ -18,17 +18,19 @@ if (file_exists(SETTINGS_LOCAL)) {
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
 if(!defined('HASHALGO_KEY')) {define('HASHALGO_KEY', 'sha256');}
 if(!defined('HASHALGO_FILE')) {define('HASHALGO_FILE', 'sha256');}
+if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 20);}
 if(!defined('TOKEN_LEN')) {define('TOKEN_LEN', 40);}
-if(!defined('TOKENVALIDCHARS')) {define('TOKENVALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
+if(!defined('TOKEN_VALIDCHARS')) {define('TOKEN_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
 if(!defined('SHRED')) {define('SHRED', true);}
 if(!defined('ENCRYPTED_DIR')) {define('ENCRYPTED_DIR', '../encrypted');}
 if(!defined('SECRET_FILE')) {define('SECRET_FILE', '../secret');}
-if(!defined('TEXT_MAKELINK')) {define('TEXT_MAKELINK', 'Make one-time password link');}
-if(!defined('TEXT_GETPASSWORD')) {define('TEXT_GETPASSWORD', 'Click to get password');}
-if(!defined('TEXT_NONEXISTING')) {define('TEXT_NONEXISTING', 'No password found. Maybe the password has already been fetched.');}
-if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 40);}
-
-if (defined('DEBUG') && DEBUG) {error_reporting(E_ALL); ini_set('display_errors', '1');}
+if(!defined('HTML_FILE')) {define('HTML_FILE', "../template.local.html");}
+if(!defined('HTML')) {define('HTML', "<html><body>%c%</body></html>");}
+if(!defined('HTML_MAKELINK')) {define('HTML_MAKELINK', "<form action='' method='post'><input type='text' size=50 name='v' value='%v%'><input type='submit' value='Make one-time password link'></form>");}
+if(!defined('HTML_SHOWLINK')) {define('HTML_SHOWLINK', "One time password link:<br><input type='text' size=100 readonly value='%u%'>");}
+if(!defined('HTML_GETPASSWORD')) {define('HTML_GETPASSWORD', "<form action='/t' method='post'><input type='hidden' name='token' value='%t%'><input type='submit' value='Click to get password'></form>");}
+if(!defined('HTML_SHOWPASSWORD')) {define('HTML_SHOWPASSWORD', "This is only shown once, so copy it to somewhere safe<br><input type='text' size=100 readonly value='%v%'>");}
+if(!defined('HTML_NONEXISTING')) {define('HTML_NONEXISTING', "No password found. Maybe the password has already been fetched.");}
 
 
 use Psr\Http\Message\ResponseInterface as Response;
@@ -66,10 +68,10 @@ class PasswordStore {
     }
 
     public static function createToken ($length = TOKEN_LEN) {
-        $l = strlen(TOKENVALIDCHARS) - 1;
+        $l = strlen(TOKEN_VALIDCHARS) - 1;
         $token = '';
         for ($i = 0; $i < $length; $i++) {
-            $token .= TOKENVALIDCHARS[random_int(0, $l)];
+            $token .= TOKEN_VALIDCHARS[random_int(0, $l)];
         }
         return $token;
     }
@@ -102,7 +104,13 @@ class PasswordStore {
 
 
 function makeHtml ($code) {
-    return '<html><head><title>Password tool</title></head><body>' . $code . '</body></html>';
+    if (file_exists(HTML_FILE)) {
+        $html = file_get_contents(HTML_FILE);
+    } else {
+        $html = HTML;
+    }
+    return str_replace('%c%', $code, $html);
+    #return '<html><head><title>Password tool</title></head><body>' . $code . '</body></html>';
 }
 
 function getBaseUri ($request) {
@@ -121,8 +129,7 @@ function getTokenUri ($v, $request) {
 
 $app->get('/', function (Request $request, Response $response, $args) {
     $v = PasswordStore::createPassword();
-    $html = "<form action='' method='post'><input type='text' size=50 name='v' value='$v'><input type='submit' value='".TEXT_MAKELINK."'></form>";
-    $html = makeHtml($html);
+    $html = makeHtml(str_replace('%v%', $v, HTML_MAKELINK));
     $response->getBody()->write($html);
     return $response;
 });
@@ -142,8 +149,7 @@ $app->post('/', function (Request $request, Response $response, $args) {
     } else {
         $v = $data['v'];
         $tokenUri = getTokenUri($v, $request);
-        $html = "<input type='text' size=100 readonly value='$tokenUri'>";
-        $html = makeHtml($html);
+        $html = makeHtml(str_replace('%u%', $tokenUri, HTML_SHOWLINK));
         $response->getBody()->write($html);
     }
     return $response;
@@ -151,8 +157,7 @@ $app->post('/', function (Request $request, Response $response, $args) {
 
 $app->get('/t/{token}', function (Request $request, Response $response, $args) {
     $token = $args['token'];
-    $html = "<form action='/t' method='post'><input type='hidden' name='token' value='$token'><input type='submit' value='".TEXT_GETPASSWORD."'></form>";
-    $html = makeHtml($html);
+    $html = makeHtml(str_replace('%t%', $token, HTML_GETPASSWORD));
     $response->getBody()->write($html);
     return $response;
 });
@@ -162,9 +167,9 @@ $app->post('/t', function (Request $request, Response $response, $args) {
         $data = $request->getParsedBody();
         $token = $data['token'];
         $v = PasswordStore::fetchString($token);
-        $html = "This is only shown once, so copy it to somewhere safe<br><input type='text' size=100 readonly value='$v'>";
+        $html = str_replace('%v%', $v, HTML_SHOWPASSWORD);
     } catch(Exception $e) {
-        $html = TEXT_NONEXISTING;
+        $html = HTML_NONEXISTING;
     }
     $html = makeHtml($html);
     $response->getBody()->write($html);

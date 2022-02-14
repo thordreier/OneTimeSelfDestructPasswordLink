@@ -22,6 +22,16 @@ ln -s /etc/nginx/sites-available/onetimepassword /etc/nginx/sites-enabled/
 systemctl reload nginx
 ```
 
+## Customize
+
+```
+cp settings.example.php settings.local.php
+editor settings.local.php
+
+cp template.example.html template.local.html
+editor template.local.html
+```
+
 
 ## REST
 

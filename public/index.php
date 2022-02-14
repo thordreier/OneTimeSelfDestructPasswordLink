@@ -18,7 +18,7 @@ if (file_exists(SETTINGS_LOCAL)) {
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
 if(!defined('HASHALGO_KEY')) {define('HASHALGO_KEY', 'sha256');}
 if(!defined('HASHALGO_FILE')) {define('HASHALGO_FILE', 'sha256');}
-if(!defined('TOKENLEN')) {define('TOKENLEN', 40);}
+if(!defined('TOKEN_LEN')) {define('TOKEN_LEN', 40);}
 if(!defined('TOKENVALIDCHARS')) {define('TOKENVALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
 if(!defined('SHRED')) {define('SHRED', true);}
 if(!defined('ENCRYPTED_DIR')) {define('ENCRYPTED_DIR', '../encrypted');}
@@ -26,7 +26,7 @@ if(!defined('SECRET_FILE')) {define('SECRET_FILE', '../secret');}
 if(!defined('TEXT_MAKELINK')) {define('TEXT_MAKELINK', 'Make one-time password link');}
 if(!defined('TEXT_GETPASSWORD')) {define('TEXT_GETPASSWORD', 'Click to get password');}
 if(!defined('TEXT_NONEXISTING')) {define('TEXT_NONEXISTING', 'No password found. Maybe the password has already been fetched.');}
-
+if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 40);}
 
 if (defined('DEBUG') && DEBUG) {error_reporting(E_ALL); ini_set('display_errors', '1');}
 
@@ -65,7 +65,7 @@ class PasswordStore {
         return hash(HASHALGO_FILE, $plain);
     }
 
-    public static function createToken ($length = TOKENLEN) {
+    public static function createToken ($length = TOKEN_LEN) {
         $l = strlen(TOKENVALIDCHARS) - 1;
         $token = '';
         for ($i = 0; $i < $length; $i++) {
@@ -75,7 +75,7 @@ class PasswordStore {
     }
 
     public static function createPassword () {
-        return self::createToken(20);
+        return self::createToken(DEFAULT_PASSWORD_LEN);
     }
 
     public static function storeString ($plain) {
@@ -88,7 +88,7 @@ class PasswordStore {
     }
 
     public static function fetchString ($token) {
-        if (strlen($token) != TOKENLEN) {throw new Exception('Token does not have correct length');}
+        if (strlen($token) != TOKEN_LEN) {throw new Exception('Token does not have correct length');}
         $file = ENCRYPTED_DIR . '/' . self::hashFileName($token);
         $encrypted = file_get_contents($file);
         $plain = self::decryptString($encrypted, $token);

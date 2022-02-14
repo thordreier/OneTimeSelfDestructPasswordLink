@@ -12,13 +12,9 @@ git clone https://github.com/thordreier/OneTimeSelfDestructPasswordLink.git
 
 composer install
 
-dd if=/dev/random bs=1 count=96 | base64 -w 0 > secret
-chown www-data.www-data secret
-chmod 400 secret
-
-mkdir password
-chown www-data.www-data password
-chmod 700 password
+mkdir encrypted
+chown www-data.www-data encrypted
+chmod 700 encrypted
 
 cp contrib/nginx.conf /etc/nginx/sites-available/onetimepassword
 editor /etc/nginx/sites-available/onetimepassword

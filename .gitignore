@@ -1,8 +1,8 @@
-composer.lock
-vendor/
-password/
-secret
+/composer.lock
+/vendor/
+/encrypted/
 *.local.*
-public/favicon.ico
+/public/*
+!/public/index.php
 ~*
 *~

@@ -16,11 +16,12 @@ if (file_exists(SETTINGS_LOCAL)) {
 #if(!defined('DEBUG')) {define('DEBUG', true);}  # Should not be set in production
 #if(!defined('KEEP_FILES')) {define('KEEP_FILES', true);}  # Should not be set in production
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
-if(!defined('HASHALGO')) {define('HASHALGO', 'sha256');}
-if(!defined('TOKENLEN')) {define('TOKENLEN', 32);}
+if(!defined('HASHALGO_KEY')) {define('HASHALGO_KEY', 'sha256');}
+if(!defined('HASHALGO_FILE')) {define('HASHALGO_FILE', 'sha256');}
+if(!defined('TOKENLEN')) {define('TOKENLEN', 40);}
 if(!defined('TOKENVALIDCHARS')) {define('TOKENVALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
 if(!defined('SHRED')) {define('SHRED', true);}
-if(!defined('PASSWORD_DIR')) {define('PASSWORD_DIR', '../password');}
+if(!defined('ENCRYPTED_DIR')) {define('ENCRYPTED_DIR', '../encrypted');}
 if(!defined('SECRET_FILE')) {define('SECRET_FILE', '../secret');}
 if(!defined('TEXT_MAKELINK')) {define('TEXT_MAKELINK', 'Make one-time password link');}
 if(!defined('TEXT_GETPASSWORD')) {define('TEXT_GETPASSWORD', 'Click to get password');}
@@ -39,35 +40,29 @@ if (defined('DEBUG') && DEBUG) {$app->addErrorMiddleware(true, true, true);}
 
 
 class PasswordStore {
-
-    private static $secret = null;
-
-    public static function getSecret () {
-        if (! self::$secret) {
-            self::$secret = base64_decode(file_get_contents(SECRET_FILE));
-            if (strlen(self::$secret) != 96) {throw new Exception('Secret does not have correct length');}
-        }
-        return self::$secret;
-    }
-
-    public static function getIV () {
-        return substr(self::getSecret(), 0, openssl_cipher_iv_length(CIPHER));
-    }
-
-    public static function getHashKey () {
-        return substr(self::getSecret(), 64);
-    }
-
     public static function encryptString ($plain, $key) {
-        return openssl_encrypt($plain, CIPHER, $key, 0, self::getIV());
+        $saltLen = strlen(hash(HASHALGO_KEY, '', true));
+        $ivLen = openssl_cipher_iv_length(CIPHER);
+        $salt = openssl_random_pseudo_bytes($saltLen);
+        $iv = openssl_random_pseudo_bytes($ivLen);
+        $hashedKey = hash_hmac(HASHALGO_KEY, $key, $salt);
+        $raw = openssl_encrypt($plain, CIPHER, $hashedKey, OPENSSL_RAW_DATA, $iv);
+        return base64_encode($salt.$iv.$raw);
     }
 
     public static function decryptString ($encrypted, $key) {
-        return openssl_decrypt($encrypted, CIPHER, $key, 0, self::getIV());
+        $binary = base64_decode($encrypted);
+        $saltLen = strlen(hash(HASHALGO_KEY, '', true));
+        $ivLen = openssl_cipher_iv_length(CIPHER);
+        $salt = substr($binary, 0, $saltLen);
+        $iv = substr($binary, $saltLen, $ivLen);
+        $raw = substr($binary, $saltLen+$ivLen);
+        $hashedKey = hash_hmac(HASHALGO_KEY, $key, $salt);
+        return openssl_decrypt($raw, CIPHER, $hashedKey, true, $iv);
     }
 
-    public static function hashString ($plain) {
-        return hash_hmac(HASHALGO, $plain, self::getHashKey());
+    public static function hashFileName ($plain) {
+        return hash(HASHALGO_FILE, $plain);
     }
 
     public static function createToken ($length = TOKENLEN) {
@@ -85,9 +80,8 @@ class PasswordStore {
 
     public static function storeString ($plain) {
         $token = self::createToken();
-        $tokenHash = self::hashString($token);
         $encrypted = self::encryptString($plain, $token);
-        $file = PASSWORD_DIR . '/' . $tokenHash;
+        $file = ENCRYPTED_DIR . '/' . self::hashFileName($token);
         umask(0077);
         file_put_contents($file, $encrypted);
         return $token;
@@ -95,8 +89,7 @@ class PasswordStore {
 
     public static function fetchString ($token) {
         if (strlen($token) != TOKENLEN) {throw new Exception('Token does not have correct length');}
-        $tokenHash = self::hashString($token);
-        $file = PASSWORD_DIR . '/' . $tokenHash;
+        $file = ENCRYPTED_DIR . '/' . self::hashFileName($token);
         $encrypted = file_get_contents($file);
         $plain = self::decryptString($encrypted, $token);
         if (! defined('KEEP_FILES') || ! DEBUG) {

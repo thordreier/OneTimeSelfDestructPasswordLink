@@ -21,3 +21,13 @@ editor /etc/nginx/sites-available/onetimepassword
 ln -s /etc/nginx/sites-available/onetimepassword /etc/nginx/sites-enabled/
 systemctl reload nginx
 ```
+
+
+## REST
+
+Example on how to create password links using REST API
+
+```
+curl https://onetimepassword.contoso.com  -X POST -H 'Content-Type: application/json' -d '{"v":"password"}'
+curl https://onetimepassword.contoso.com  -X POST -H 'Content-Type: application/json' -d '{"generate":true}'
+```

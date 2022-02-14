@@ -129,12 +129,19 @@ $app->get('/', function (Request $request, Response $response, $args) {
 
 $app->post('/new', function (Request $request, Response $response, $args) {
     $data = $request->getParsedBody();
-    $v = $data['v'];
-    $tokenUri = getTokenUri($v, $request);
-    if (preg_match('/application\/json/', $request->getHeaderLine('Content-Type'))) {
-        $json = array('uri' => $tokenUri);
-        $response = $response->withJson(['uri' => $tokenUri]);
+    if ($request->getContentType() == 'application/json') {
+        $json = array();
+        if (isset($data['generate']) && $data['generate']) {
+            $v = PasswordStore::createPassword();
+            $json['v'] = $v;
+        } else {
+            $v = $data['v'];
+        }
+        $json['uri'] = getTokenUri($v, $request);
+        $response = $response->withJson($json);
     } else {
+        $v = $data['v'];
+        $tokenUri = getTokenUri($v, $request);
         $html = "<input type='text' size=100 readonly value='$tokenUri'>";
         $html = makeHtml($html);
         $response->getBody()->write($html);

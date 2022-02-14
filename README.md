@@ -28,6 +28,6 @@ systemctl reload nginx
 Example on how to create password links using REST API
 
 ```
-curl https://onetimepassword.contoso.com  -X POST -H 'Content-Type: application/json' -d '{"v":"password"}'
-curl https://onetimepassword.contoso.com  -X POST -H 'Content-Type: application/json' -d '{"generate":true}'
+curl https://onetimepassword.contoso.com -X POST -H 'Content-Type: application/json' -d '{"v":"password"}'
+curl https://onetimepassword.contoso.com -X POST -H 'Content-Type: application/json' -d '{"generate":true}'
 ```

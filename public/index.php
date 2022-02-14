@@ -121,13 +121,13 @@ function getTokenUri ($v, $request) {
 
 $app->get('/', function (Request $request, Response $response, $args) {
     $v = PasswordStore::createPassword();
-    $html = "<form action='new' method='post'><input type='text' size=50 name='v' value='$v'><input type='submit' value='".TEXT_MAKELINK."'></form>";
+    $html = "<form action='' method='post'><input type='text' size=50 name='v' value='$v'><input type='submit' value='".TEXT_MAKELINK."'></form>";
     $html = makeHtml($html);
     $response->getBody()->write($html);
     return $response;
 });
 
-$app->post('/new', function (Request $request, Response $response, $args) {
+$app->post('/', function (Request $request, Response $response, $args) {
     $data = $request->getParsedBody();
     if ($request->getContentType() == 'application/json') {
         $json = array();

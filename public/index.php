@@ -12,18 +12,18 @@ if (file_exists(SETTINGS_LOCAL)) {
     require_once(SETTINGS_LOCAL);
 }
 
-#if(!defined('DEBUG')) {define('DEBUG', true);}  # Should not be set in production
-#if(!defined('KEEP_FILES')) {define('KEEP_FILES', true);}  # Should not be set in production
+if(!defined('DEBUG')) {define('DEBUG', false);}  # Should not be set to true in production
+if(!defined('KEEP_FILES')) {define('KEEP_FILES', false);}  # Should not be set to true in production
 if(!defined('REMOVE_OLD_FILES')) {define('REMOVE_OLD_FILES', true);}
-if(!defined('REMOVE_OLD_FILES_AGE')) {define('REMOVE_OLD_FILES_AGE', 90);} # If REMOVE_OLD_FILES is defined, how old should the files be when they are removed
+if(!defined('REMOVE_OLD_FILES_AGE')) {define('REMOVE_OLD_FILES_AGE', 180);} # If REMOVE_OLD_FILES is defined, how old should the files be when they are removed
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
 if(!defined('HASHALGO_KEY')) {define('HASHALGO_KEY', 'sha256');}
 if(!defined('HASHALGO_FILE')) {define('HASHALGO_FILE', 'sha256');}
-if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 20);}
+if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 32);}
 if(!defined('MAX_PASSWORD_LEN')) {define('MAX_PASSWORD_LEN', 512);}
 if(!defined('TOKEN_LEN')) {define('TOKEN_LEN', 40);}
 if(!defined('TOKEN_VALIDCHARS')) {define('TOKEN_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
-if(!defined('PASSWORD_VALIDCHARS')) {define('PASSWORD_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/_!-');}
+if(!defined('PASSWORD_VALIDCHARS')) {define('PASSWORD_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\/_!-()=+');}
 if(!defined('SHRED')) {define('SHRED', true);}
 if(!defined('ENCRYPTED_DIR')) {define('ENCRYPTED_DIR', '../encrypted');}
 if(!defined('HTML_FILE')) {define('HTML_FILE', "../template.local.html");}
@@ -96,12 +96,12 @@ class PasswordStore {
     }
 
     public static function cleanFile ($file) {
-        if (! defined('KEEP_FILES')) {
+        if ( defined('KEEP_FILES') && ! KEEP_FILES) {
             if (SHRED) {exec("shred -n 7 $file");}
             unlink($file);
         }
-        if ( DEBUG ) {
-            return "Delete $file"
+        if ( defined('DEBUG') && DEBUG ) {
+            return "<br />Delete old password file: {$file}";
         }
     }
 
@@ -116,20 +116,19 @@ class PasswordStore {
 
     public static function cleanOldPasswords($REMOVE_OLD_FILES = REMOVE_OLD_FILES, $REMOVE_OLD_FILES_AGE = REMOVE_OLD_FILES_AGE) {
         if(!$REMOVE_OLD_FILES) { return; }
-        if (!is_int($REMOVE_OLD_FILES_AGE) || $REMOVE_OLD_FILES_AGE < 1 ) {throw new Exception('Invalid password age');}
-        
+        if (!is_int($REMOVE_OLD_FILES_AGE) ) {throw new Exception('Invalid password age');}
+
         $timeThreshold = strtotime("-{$REMOVE_OLD_FILES_AGE} days");
-        $deletedFiles = [];
+        $deletedFiles = "";
 
         foreach(new RecursiveDirectoryIterator(ENCRYPTED_DIR) as $encrypted_file) {
             if (substr($encrypted_file->getFilename(), 0, 1) == '.') { // Skip hidden files
                 continue;
             }
-            elseif ($encrypted_file->getMTime() < $timeThreshold) {
-                $DEBUG == false ? self::cleanFile($encrypted_file->getPathname()) : array_push($deletedFiles, "<br />" . self::cleanFile($encrypted_file->getPathname()));
+            if ($encrypted_file->getMTime() < $timeThreshold) {
+                (! defined('DEBUG') && ! DEBUG) ? self::cleanFile($encrypted_file->getPathname()) : $deletedFiles .= self::cleanFile($encrypted_file->getPathname());
             }
         }
-
         return $deletedFiles;
     }
 }
@@ -160,8 +159,8 @@ function getTokenUri ($v, $request) {
 $app->get('/', function (Request $request, Response $response, $args) {
     $deleted_files = PasswordStore::cleanOldPasswords();
     $v = PasswordStore::createPassword();
-    $html = makeHtml(str_replace('%v%', $v, HTML_MAKELINK));
-    $response->getBody()->write($html . $deleted_files);
+    $html = makeHtml(str_replace('%v%', $v, HTML_MAKELINK) . $deleted_files);
+    $response->getBody()->write($html);
     return $response;
 });
 

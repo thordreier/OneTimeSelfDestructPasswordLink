@@ -19,11 +19,11 @@ if(!defined('REMOVE_OLD_FILES_AGE')) {define('REMOVE_OLD_FILES_AGE', 180);} # If
 if(!defined('CIPHER')) {define('CIPHER', 'aes-256-cbc');}
 if(!defined('HASHALGO_KEY')) {define('HASHALGO_KEY', 'sha256');}
 if(!defined('HASHALGO_FILE')) {define('HASHALGO_FILE', 'sha256');}
-if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 32);}
+if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 20);}
 if(!defined('MAX_PASSWORD_LEN')) {define('MAX_PASSWORD_LEN', 512);}
 if(!defined('TOKEN_LEN')) {define('TOKEN_LEN', 40);}
 if(!defined('TOKEN_VALIDCHARS')) {define('TOKEN_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
-if(!defined('PASSWORD_VALIDCHARS')) {define('PASSWORD_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\/_!-()=+');}
+if(!defined('PASSWORD_VALIDCHARS')) {define('PASSWORD_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/_!-()=+');}
 if(!defined('SHRED')) {define('SHRED', true);}
 if(!defined('ENCRYPTED_DIR')) {define('ENCRYPTED_DIR', '../encrypted');}
 if(!defined('HTML_FILE')) {define('HTML_FILE', "../template.local.html");}

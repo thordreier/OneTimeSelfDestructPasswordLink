@@ -21,7 +21,7 @@ if(!defined('HASHALGO_FILE')) {define('HASHALGO_FILE', 'sha256');}
 if(!defined('DEFAULT_PASSWORD_LEN')) {define('DEFAULT_PASSWORD_LEN', 20);}
 if(!defined('MAX_PASSWORD_LEN')) {define('MAX_PASSWORD_LEN', 512);}
 if(!defined('TOKEN_LEN')) {define('TOKEN_LEN', 40);}
-if(!defined('TOKEN_VALIDCHARS')) {define('TOKEN_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');}
+if(!defined('TOKEN_VALIDCHARS')) {define('TOKEN_VALIDCHARS', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_/!$');}
 if(!defined('SHRED')) {define('SHRED', true);}
 if(!defined('ENCRYPTED_DIR')) {define('ENCRYPTED_DIR', '../encrypted');}
 if(!defined('SECRET_FILE')) {define('SECRET_FILE', '../secret');}
